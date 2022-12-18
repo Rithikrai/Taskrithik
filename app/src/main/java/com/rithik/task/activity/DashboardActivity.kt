@@ -5,7 +5,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
-import android.os.Build.ID
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
@@ -15,16 +14,16 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.databinding.DataBindingUtil
-import androidx.databinding.library.baseAdapters.BuildConfig
 import androidx.room.Room
 import androidx.viewpager.widget.ViewPager.OnPageChangeListener
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.rithik.task.R
 import com.rithik.task.adapter.BottomSwipeAdapter
 import com.rithik.task.adapter.TopSwipeAdapter
 import com.rithik.task.databinding.ActivityDashboardBinding
-import com.rithik.task.db.*
+import com.rithik.task.db.Bottomwear
+import com.rithik.task.db.MasterDataBase
+import com.rithik.task.db.Topwear
+import com.rithik.task.db.Wishlist
 import com.rithik.task.extras.Utils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -44,8 +43,7 @@ open class DashboardActivity : AppCompatActivity() {
     var mPhotoFile: File? = null
     private var topwearList: List<Topwear>? = null
     private var bottomwearList: List<Bottomwear>? = null
-    private val wishData: Wishlist? = null
-    private var mainDb: DBAccess? = null
+    private var wishData: Wishlist? = null
     lateinit var database: MasterDataBase
 
 
@@ -56,10 +54,11 @@ open class DashboardActivity : AppCompatActivity() {
 //        database = Room.databaseBuilder(applicationContext, MasterDataBase::class.java, "LocationDB")
 
         database =
-        Room.databaseBuilder(
-            applicationContext, MasterDataBase::class.java, "Rithik123")
-            .fallbackToDestructiveMigration()
-            .build()
+            Room.databaseBuilder(
+                applicationContext, MasterDataBase::class.java, "Rithik123"
+            )
+                .fallbackToDestructiveMigration()
+                .build()
 
 
 
@@ -161,8 +160,8 @@ open class DashboardActivity : AppCompatActivity() {
 
         val executorService = Executors.newSingleThreadExecutor()
         executorService.execute {
-            topwearList= database.allDao().getTopWear() as List<Topwear>?
-            bottomwearList= database.allDao().getBottomWear() as List<Bottomwear>?
+            topwearList = database.allDao().getTopWear() as List<Topwear>?
+            bottomwearList = database.allDao().getBottomWear() as List<Bottomwear>?
             runOnUiThread {
                 if (topwearList!!.size !== 0) {
                     swipeAdapter = TopSwipeAdapter(applicationContext, topwearList!!)
@@ -179,35 +178,57 @@ open class DashboardActivity : AppCompatActivity() {
 
             }
         }
-        CoroutineScope(Dispatchers.IO).launch {
-            database?.let {
-                topwearList= database.allDao().getTopWear() as List<Topwear>?
-                bottomwearList= database.allDao().getBottomWear() as List<Bottomwear>?
-            }
-        }
-//        topwearList= database.allDao().getTopWear() as List<Topwear>?
-//        bottomwearList= database.allDao().getBottomWear() as List<Bottomwear>?
+
 
     }
 
     private fun getWishData() {
+
         if (topwearList!!.size != 0 && bottomwearList!!.size != 0) {
             val topPos: Int = binding.topPager.getCurrentItem()
             val bottomPos: Int = binding.bottomPager.getCurrentItem()
-            CoroutineScope(Dispatchers.IO).launch {
-                database?.let {
-                    database.allDao().getWishData(
+
+            val executorService = Executors.newSingleThreadExecutor()
+            executorService.execute {
+                database.allDao().getWishData(
                     topwearList!!.get(topPos).id,
                     bottomwearList!!.get(bottomPos).id
                 )
+
+                runOnUiThread {
+                    fun onChanged(wishlist: Wishlist) {
+                        wishData = wishlist
+                        if (wishlist == null) {
+                            binding.wishImg.setImageDrawable(resources.getDrawable(R.drawable.notwish))
+                        } else {
+                            binding.wishImg.setImageDrawable(resources.getDrawable(R.drawable.wish))
+                        }
+                    }
+//                    if (wishData == null) {
+//                        binding.wishImg.setImageDrawable(resources.getDrawable(R.drawable.notwish))
+//                    } else {
+//                        binding.wishImg.setImageDrawable(resources.getDrawable(R.drawable.wish))
+//                    }
+
                 }
             }
+//            CoroutineScope(Dispatchers.IO).launch {
+//                database?.let {
+//                    database.allDao().getWishData(
+//                    topwearList!!.get(topPos).id,
+//                    bottomwearList!!.get(bottomPos).id
+//                )
+//                }
+//            }
+
+
 //            mainDb!!.getWishData(
 //                topwearList!!.get(topPos).id,
 //                bottomwearList!!.get(bottomPos).id
 //            )
-            var wishlist = wishData
-            if (wishlist == null) {
+            Log.d("rithik1", "getWishData: " + wishData)
+
+            if (wishData == null) {
                 binding.wishImg.setImageDrawable(resources.getDrawable(R.drawable.notwish))
             } else {
                 binding.wishImg.setImageDrawable(resources.getDrawable(R.drawable.wish))
@@ -261,6 +282,7 @@ open class DashboardActivity : AppCompatActivity() {
                 }
             }
             builder.show()
+            displayViewPagers()
         } else {
             Utils.requestPermission(this, PERMISSION_REQUEST_CODE)
         }
@@ -296,7 +318,7 @@ open class DashboardActivity : AppCompatActivity() {
                 if (flag == 0) {
                     CoroutineScope(Dispatchers.IO).launch {
                         database?.let {
-                            database.allDao()!!
+                            database.allDao()
                                 .insertTopWear(Topwear(0, selectedImage.toString()))
                         }
                     }
@@ -306,8 +328,8 @@ open class DashboardActivity : AppCompatActivity() {
                 } else {
                     CoroutineScope(Dispatchers.IO).launch {
                         database?.let {
-                            database.allDao()!!
-                        .insertBottomWear(Bottomwear(0, selectedImage.toString()))
+                            database.allDao()
+                                .insertBottomWear(Bottomwear(0, selectedImage.toString()))
                         }
                     }
 //                    database.allDao()!!
@@ -318,7 +340,6 @@ open class DashboardActivity : AppCompatActivity() {
     }
 
 
-
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -326,7 +347,7 @@ open class DashboardActivity : AppCompatActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions!!, grantResults)
         when (requestCode) {
-           PERMISSION_REQUEST_CODE -> if (grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            PERMISSION_REQUEST_CODE -> if (grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 ImageDialog()
             } else {
                 Toast.makeText(applicationContext, "Permission Denied", Toast.LENGTH_SHORT).show()
@@ -358,6 +379,12 @@ open class DashboardActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        clickAndPageListener()
+        displayViewPagers()
     }
 
 
