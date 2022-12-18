@@ -39,4 +39,5 @@ class TopSwipeAdapter(private val mContext: Context, topwears: List<Topwear>) :
     init {
         this.topwears = topwears
     }
+
 }

@@ -24,6 +24,7 @@ class BottomSwipeAdapter(private val mContext: Context, bottomwears: List<Bottom
         return view
     }
 
+
     override fun destroyItem(collection: ViewGroup, position: Int, view: Any) {
         collection.removeView(view as View)
     }

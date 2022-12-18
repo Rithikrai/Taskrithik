@@ -22,11 +22,9 @@ interface DBAccess {
     fun deleteWishlist(wishlist: Wishlist?)
 
     @Query("Select * from Topwear order by id desc")
-//    fun getTopWear(): LiveData<List<Topwear?>?>?
     fun getTopWear(): List<Topwear?>?
 
     @Query("Select * from Bottomwear order by id desc")
-//    fun getBottomWear(): LiveData<List<Bottomwear?>?>?
     fun getBottomWear(): List<Bottomwear?>?
 
     @Query("Select * from Wishlist where topId = :tid and bottomId = :bid")

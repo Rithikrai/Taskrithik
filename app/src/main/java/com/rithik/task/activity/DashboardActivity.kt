@@ -50,9 +50,6 @@ open class DashboardActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_dashboard)
-//        getInstance(this)
-//        database = Room.databaseBuilder(applicationContext, MasterDataBase::class.java, "LocationDB")
-
         database =
             Room.databaseBuilder(
                 applicationContext, MasterDataBase::class.java, "Rithik123"
@@ -212,20 +209,6 @@ open class DashboardActivity : AppCompatActivity() {
 
                 }
             }
-//            CoroutineScope(Dispatchers.IO).launch {
-//                database?.let {
-//                    database.allDao().getWishData(
-//                    topwearList!!.get(topPos).id,
-//                    bottomwearList!!.get(bottomPos).id
-//                )
-//                }
-//            }
-
-
-//            mainDb!!.getWishData(
-//                topwearList!!.get(topPos).id,
-//                bottomwearList!!.get(bottomPos).id
-//            )
             Log.d("rithik1", "getWishData: " + wishData)
 
             if (wishData == null) {
@@ -233,15 +216,6 @@ open class DashboardActivity : AppCompatActivity() {
             } else {
                 binding.wishImg.setImageDrawable(resources.getDrawable(R.drawable.wish))
             }
-//                .observe(this@MainActivity,
-//                Observer<Any> { wishlist ->
-//                    wishData = wishlist
-//                    if (wishlist == null) {
-//                        binding.wishImg.setImageDrawable(resources.getDrawable(R.drawable.notwish))
-//                    } else {
-//                        binding.wishImg.setImageDrawable(resources.getDrawable(R.drawable.wish))
-//                    }
-//                })
         }
     }
 
@@ -300,8 +274,7 @@ open class DashboardActivity : AppCompatActivity() {
                             database.allDao().insertTopWear(Topwear(0, selectedImage.toString()))
                         }
                     }
-//                    database.allDao()!!
-//                        .insertTopWear(Topwear(0, selectedImage.toString()))
+
                 } else {
                     CoroutineScope(Dispatchers.IO).launch {
                         database?.let {
@@ -309,8 +282,7 @@ open class DashboardActivity : AppCompatActivity() {
                                 .insertBottomWear(Bottomwear(0, selectedImage.toString()))
                         }
                     }
-//                    database.allDao()!!
-//                        .insertBottomWear(Bottomwear(0, selectedImage.toString()))
+
                 }
             }
             1 -> if (resultCode == RESULT_OK) {
