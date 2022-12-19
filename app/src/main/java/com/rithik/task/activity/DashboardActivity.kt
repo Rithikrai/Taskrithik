@@ -32,6 +32,7 @@ import java.io.File
 import java.io.IOException
 import java.util.*
 import java.util.concurrent.Executors
+import kotlin.collections.ArrayList
 
 open class DashboardActivity : AppCompatActivity() {
 
@@ -42,9 +43,11 @@ open class DashboardActivity : AppCompatActivity() {
     var swipeAdapter2: BottomSwipeAdapter? = null
     var mPhotoFile: File? = null
     private var topwearList: List<Topwear>? = null
+    private var wishDataList= ArrayList<Wishlist>()
     private var bottomwearList: List<Bottomwear>? = null
     private var wishData: Wishlist? = null
     lateinit var database: MasterDataBase
+     var isselected=false
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -81,7 +84,8 @@ open class DashboardActivity : AppCompatActivity() {
             if (topwearList!!.size != 0 && bottomwearList!!.size != 0) {
                 val topPos = binding.topPager.currentItem
                 val bottomPos = binding.bottomPager.currentItem
-                if (wishData == null) {
+                if (wishData == null&&isselected==true) {
+
                     CoroutineScope(Dispatchers.IO).launch {
                         database?.let {
                             database.allDao()!!.insertWishlist(
@@ -97,14 +101,27 @@ open class DashboardActivity : AppCompatActivity() {
                     binding.wishImg.setImageDrawable(resources.getDrawable(R.drawable.wish))
                     Toast.makeText(applicationContext, "Item added to wishlist", Toast.LENGTH_SHORT)
                         .show()
+                    isselected=true
                 } else {
-                    database.allDao().deleteWishlist(wishData)
-                    binding.wishImg.setImageDrawable(resources.getDrawable(R.drawable.notwish))
-                    Toast.makeText(
-                        applicationContext,
-                        "Item removed from wishlist",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    val executorService = Executors.newSingleThreadExecutor()
+                    executorService.execute {
+                        for (i in wishDataList.indices){
+                            var abc=  wishDataList[i].id
+                            database.allDao().deleteRecord(abc,topwearList!![topPos].id,
+                                bottomwearList!![bottomPos].id)
+                        }
+                        runOnUiThread {
+                            binding.wishImg.setImageDrawable(resources.getDrawable(R.drawable.notwish))
+                            Toast.makeText(
+                                applicationContext,
+                                "Item removed from wishlist",
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                            isselected=true
+
+                        }
+                    }
                 }
             }
         }
@@ -191,21 +208,18 @@ open class DashboardActivity : AppCompatActivity() {
                     topwearList!!.get(topPos).id,
                     bottomwearList!!.get(bottomPos).id
                 )
-
+                wishDataList!!.addAll(database.allDao().getWishDataList(topwearList!!.get(topPos).id,
+                    bottomwearList!!.get(bottomPos).id) as ArrayList<Wishlist>)
                 runOnUiThread {
-                    fun onChanged(wishlist: Wishlist) {
-                        wishData = wishlist
-                        if (wishlist == null) {
-                            binding.wishImg.setImageDrawable(resources.getDrawable(R.drawable.notwish))
-                        } else {
+
+                    for (i in wishDataList!!.indices){
+                        if(wishDataList!![i].topId == topwearList!!.get(topPos).id &&
+                            wishDataList!![i].bottomId == bottomwearList!!.get(bottomPos).id){
                             binding.wishImg.setImageDrawable(resources.getDrawable(R.drawable.wish))
+                    }else{
+                            binding.wishImg.setImageDrawable(resources.getDrawable(R.drawable.notwish))
                         }
                     }
-//                    if (wishData == null) {
-//                        binding.wishImg.setImageDrawable(resources.getDrawable(R.drawable.notwish))
-//                    } else {
-//                        binding.wishImg.setImageDrawable(resources.getDrawable(R.drawable.wish))
-//                    }
 
                 }
             }
@@ -294,9 +308,6 @@ open class DashboardActivity : AppCompatActivity() {
                                 .insertTopWear(Topwear(0, selectedImage.toString()))
                         }
                     }
-
-//                    database.allDao()!!
-//                        .insertTopWear(Topwear(0, selectedImage.toString()))
                 } else {
                     CoroutineScope(Dispatchers.IO).launch {
                         database?.let {
@@ -304,8 +315,7 @@ open class DashboardActivity : AppCompatActivity() {
                                 .insertBottomWear(Bottomwear(0, selectedImage.toString()))
                         }
                     }
-//                    database.allDao()!!
-//                        .insertBottomWear(Bottomwear(0, selectedImage.toString()))
+
                 }
             }
         }
